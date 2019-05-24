@@ -126,13 +126,13 @@ class socket_reader():
     return self.src
 
 
-def os_symlink(src, dst):
+def os_symlink(src, dst, use_dir_junction=False):
   if isUnix():
     os.symlink(src, dst)
   else:
-    windows_symlink(src, dst)
+    windows_symlink(src, dst, use_dir_junction)
 
-def windows_symlink(src, dst):
+def windows_symlink(src, dst, use_dir_junction=False):
   globalConfig = git_config.GitConfig.ForUser()
 
   src = to_windows_path(src)
@@ -141,6 +141,10 @@ def windows_symlink(src, dst):
 
   no_symlinks = globalConfig.GetBoolean("portable.windowsNoSymlinks")
   if no_symlinks is None or no_symlinks == False:
+   if is_dir and use_dir_junction:
+    src = os.path.abspath(os.path.join(os.path.dirname(dst), src))
+    symlink_options_dir = '/J'
+   else:
     symlink_options_dir = '/D'
     symlink_options_file = ''
   else:
@@ -285,7 +289,7 @@ def redirect_all(executable):
   old_sysout = sys.stdout
   old_syserr = sys.stderr
   Trace("redirecting to %s" % executable)
-  p = subprocess.Popen([executable], stdin=subprocess.PIPE, stdout=old_sysout, stderr=old_syserr)
+  p = subprocess.Popen(executable, stdin=subprocess.PIPE, stdout=old_sysout, stderr=old_syserr)
   sys.stdout = p.stdin
   sys.stderr = p.stdin
   old_sysout.close()

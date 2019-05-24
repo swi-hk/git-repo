@@ -269,24 +269,27 @@ class _LinkFile(object):
     self.src_rel_to_dest = relsrc
     self.abs_dest = absdest
 
-  def __linkIt(self, relSrc, absDest):
+  def __linkIt(self, relSrc, absDest, use_dir_junction=False):
     # link file if it does not exist or is out of date
     # if not os.path.islink(absDest) or (os.readlink(absDest) != relSrc):
     if not portable.os_path_islink(absDest) or (portable.os_path_realpath(absDest) != relSrc):
       try:
         # remove existing file first, since it might be read-only
         if os.path.lexists(absDest):
+         try:
+          os.rmdir(absDest)
+         except:
           os.remove(absDest)
         else:
           dest_dir = os.path.dirname(absDest)
           if not os.path.isdir(dest_dir):
             os.makedirs(dest_dir)
         # os.symlink(relSrc, absDest)
-        portable.os_symlink(relSrc, absDest)
+        portable.os_symlink(relSrc, absDest, use_dir_junction)
       except IOError:
         _error('Cannot link file %s to %s', relSrc, absDest)
 
-  def _Link(self):
+  def _Link(self, use_dir_junction=False):
     """Link the self.rel_src_to_dest and self.abs_dest. Handles wild cards
     on the src linking all of the files in the source in to the destination
     directory.
@@ -296,6 +299,9 @@ class _LinkFile(object):
     absSrc = os.path.join(self.git_worktree, self.src)
     if os.path.exists(absSrc):
       # Entity exists so just a simple one to one link operation
+     if use_dir_junction and os.path.isdir(absSrc):
+      self.__linkIt(self.src_rel_to_dest, self.abs_dest, True)
+     else:
       self.__linkIt(self.src_rel_to_dest, self.abs_dest)
     else:
       # Entity doesn't exist assume there is a wild card
@@ -1291,7 +1297,7 @@ class Project(object):
     for copyfile in self.copyfiles:
       copyfile._Copy()
     for linkfile in self.linkfiles:
-      linkfile._Link()
+      linkfile._Link(True)
 
   def GetCommitRevisionId(self):
     """Get revisionId of a commit.
