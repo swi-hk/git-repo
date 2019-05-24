@@ -922,7 +922,7 @@ class Project(object):
     else:
       return False
 
-  def PrintWorkTreeStatus(self, output_redir=None):
+  def PrintWorkTreeStatus(self, output_redir=None, absolute_paths=False):
     """Prints the status of the repository to stdout.
 
     Args:
@@ -968,6 +968,7 @@ class Project(object):
     paths.extend(df.keys())
     paths.extend(do)
 
+    self_p = ( '%s/' % self.relpath ) if absolute_paths else ''
     for p in sorted(set(paths)):
       try:
         i = di[p]
@@ -990,10 +991,10 @@ class Project(object):
         f_status = '-'
 
       if i and i.src_path:
-        line = ' %s%s\t%s => %s (%s%%)' % (i_status, f_status,
-                                           i.src_path, p, i.level)
+        line = ' %s%s\t%s%s => %s%s (%s%%)' % (i_status, f_status,
+                                           self_p, i.src_path, self_p, p, i.level)
       else:
-        line = ' %s%s\t%s' % (i_status, f_status, p)
+        line = ' %s%s\t%s%s' % (i_status, f_status, self_p, p)
 
       if i and not f:
         out.added('%s', line)

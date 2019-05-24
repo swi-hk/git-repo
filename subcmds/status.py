@@ -27,6 +27,13 @@ import os
 
 from color import Coloring
 
+try:
+  from portable import isUnix
+except ImportError:
+  import platform
+  def isUnix():
+    return platform.system() != "Windows"
+
 class Status(PagedCommand):
   common = True
   helpSummary = "Show the working tree status"
@@ -80,17 +87,37 @@ the following meanings:
  m:  modified      (    in index,     in work tree, modified      )
  d:  deleted       (    in index, not in work tree                )
 
+Example
+-------
+
+  - show status for selected projects and use absolute paths
+    repo --no-pager status -u -r "^(kernel|lk|mdm.{4})$"
 """
 
   def _Options(self, p):
     p.add_option('-j', '--jobs',
-                 dest='jobs', action='store', type='int', default=2,
+                 dest='jobs', action='store', type='int', default=( 2 if isUnix() else 1 ),
                  help="number of projects to check simultaneously")
     p.add_option('-o', '--orphans',
                  dest='orphans', action='store_true',
                  help="include objects in working directory outside of repo projects")
+    p.add_option('-u', '--absolute',
+                 dest='absolute', action='store_true',
+                 help='Paths are relative to the repository root')
+    p.add_option('-r', '--regex',
+                 dest='regex', action='store_true',
+                 help="Execute the command only on projects matching regex or wildcard expression")
+    p.add_option('-i', '--inverse-regex',
+                 dest='inverse_regex', action='store_true',
+                 help="Execute the command only on projects not matching regex or wildcard expression")
+    p.add_option('-g', '--groups',
+                 dest='groups',
+                 help="Execute the command only on projects matching the specified groups")
+    p.add_option('-G', '--gitargs',
+                 type='string',  action='store', dest='git_args',
+                 help='Additional git arguments to pass to git diff')
 
-  def _StatusHelper(self, project, clean_counter, sem):
+  def _StatusHelper(self, project, clean_counter, sem, absolute):
     """Obtains the status for a specific project.
 
     Obtains the status for a project, redirecting the output to
@@ -104,7 +131,7 @@ the following meanings:
       output: Where to output the status.
     """
     try:
-      state = project.PrintWorkTreeStatus()
+      state = project.PrintWorkTreeStatus(absolute_paths=absolute)
       if state == 'CLEAN':
         next(clean_counter)
     finally:
@@ -127,9 +154,14 @@ the following meanings:
       outstring.append(''.join([status_header, item, '/']))
 
   def Execute(self, opt, args):
-    all_projects = self.GetProjects(args)
-    counter = itertools.count()
+    if opt.regex:
+      all_projects = self.FindProjects(args)
+    elif opt.inverse_regex:
+      all_projects = self.FindProjects(args, inverse=True)
+    else:
+      all_projects = self.GetProjects(args, groups=opt.groups)
 
+    counter = itertools.count()
     if opt.jobs == 1:
       for project in all_projects:
         state = project.PrintWorkTreeStatus()
@@ -142,7 +174,7 @@ the following meanings:
         sem.acquire()
 
         t = _threading.Thread(target=self._StatusHelper,
-                              args=(project, counter, sem))
+                              args=(project, counter, sem, opt.absolute))
         threads.append(t)
         t.daemon = True
         t.start()
