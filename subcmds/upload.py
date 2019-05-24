@@ -181,6 +181,18 @@ Gerrit Code Review:  http://code.google.com/p/gerrit/
     p.add_option('--verify',
                  dest='allow_all_hooks', action='store_true',
                  help='Run the upload hook without prompting.')
+    p.add_option('-r', '--regex',
+                 dest='regex', action='store_true',
+                 help="Execute the command only on projects matching regex or wildcard expression")
+    p.add_option('-i', '--inverse-regex',
+                 dest='inverse_regex', action='store_true',
+                 help="Execute the command only on projects not matching regex or wildcard expression")
+    p.add_option('-g', '--groups',
+                 dest='groups',
+                 help="Execute the command only on projects matching the specified groups")
+    p.add_option('--nuc',
+                 dest='dont_check_uncommit', action='store_true',
+                 help="Do not check uncommitted changes before uploading")
 
   def _SingleBranch(self, opt, branch, people):
     project = branch.project
@@ -225,12 +237,14 @@ Gerrit Code Review:  http://code.google.com/p/gerrit/
     branches = {}
 
     script = []
+    todo = []
     script.append('# Uncomment the branches to upload:')
     for project, avail in pending:
       script.append('#')
       script.append('# project %s/:' % project.relpath)
 
       b = {}
+      ask_cnt = 0
       for branch in avail:
         if branch is None:
           continue
@@ -238,56 +252,63 @@ Gerrit Code Review:  http://code.google.com/p/gerrit/
         date = branch.date
         commit_list = branch.commits
 
-        if b:
-          script.append('#')
-        destination = opt.dest_branch or project.dest_branch or project.revisionExpr
-        script.append('#  branch %s (%2d commit%s, %s) to remote branch %s:' % (
-                      name,
-                      len(commit_list),
-                      len(commit_list) != 1 and 's' or '',
-                      date,
-                      destination))
-        for commit in commit_list:
-          script.append('#         %s' % commit)
+        key = 'review.%s.autoupload' % branch.project.remote.review
+        answer = branch.project.config.GetBoolean(key)
+
+        if answer:
+          todo.append(branch)
+        else:
+          if b:
+            script.append('#')
+          destination = opt.dest_branch or project.dest_branch or project.revisionExpr
+          script.append('#  branch %s (%2d commit%s, %s) to remote branch %s:' % (
+                        name,
+                        len(commit_list),
+                        len(commit_list) != 1 and 's' or '',
+                        date,
+                        destination))
+          for commit in commit_list:
+            script.append('#         %s' % commit)
+          ask_cnt += 1
         b[name] = branch
 
       projects[project.relpath] = project
       branches[project.name] = b
     script.append('')
 
-    script = [ x.encode('utf-8')
-             if issubclass(type(x), unicode)
-             else x
-             for x in script ]
+    if ask_cnt > 0:
+      script = [ x.encode('utf-8')
+               if issubclass(type(x), unicode)
+               else x
+               for x in script ]
 
-    script = Editor.EditString("\n".join(script)).split("\n")
+      script = Editor.EditString("\n".join(script)).split("\n")
 
-    project_re = re.compile(r'^#?\s*project\s*([^\s]+)/:$')
-    branch_re = re.compile(r'^\s*branch\s*([^\s(]+)\s*\(.*')
+      project_re = re.compile(r'^#?\s*project\s*([^\s]+)/:$')
+      branch_re = re.compile(r'^\s*branch\s*([^\s(]+)\s*\(.*')
 
-    project = None
-    todo = []
+      project = None
 
-    for line in script:
-      m = project_re.match(line)
-      if m:
-        name = m.group(1)
-        project = projects.get(name)
-        if not project:
-          _die('project %s not available for upload', name)
-        continue
+      for line in script:
+        m = project_re.match(line)
+        if m:
+          name = m.group(1)
+          project = projects.get(name)
+          if not project:
+            _die('project %s not available for upload', name)
+          continue
 
-      m = branch_re.match(line)
-      if m:
-        name = m.group(1)
-        if not project:
-          _die('project for branch %s not in script', name)
-        branch = branches[project.name].get(name)
-        if not branch:
-          _die('branch %s not in %s', name, project.relpath)
-        todo.append(branch)
-    if not todo:
-      _die("nothing uncommented for upload")
+        m = branch_re.match(line)
+        if m:
+          name = m.group(1)
+          if not project:
+            _die('project for branch %s not in script', name)
+          branch = branches[project.name].get(name)
+          if not branch:
+            _die('branch %s not in %s', name, project.relpath)
+          todo.append(branch)
+      if not todo:
+        _die("nothing uncommented for upload")
 
     many_commits = False
     for branch in todo:
@@ -338,24 +359,24 @@ Gerrit Code Review:  http://code.google.com/p/gerrit/
         people = copy.deepcopy(original_people)
         self._AppendAutoList(branch, people)
 
-        # Check if there are local changes that may have been forgotten
-        changes = branch.project.UncommitedFiles()
-        if changes:
-          key = 'review.%s.autoupload' % branch.project.remote.review
-          answer = branch.project.config.GetBoolean(key)
+        key = 'review.%s.autoupload' % branch.project.remote.review
+        answer = branch.project.config.GetBoolean(key)
 
-          # if they want to auto upload, let's not ask because it could be automated
-          if answer is None:
-            sys.stdout.write('Uncommitted changes in ' + branch.project.name)
-            sys.stdout.write(' (did you forget to amend?):\n')
-            sys.stdout.write('\n'.join(changes) + '\n')
-            sys.stdout.write('Continue uploading? (y/N) ')
-            a = sys.stdin.readline().strip().lower()
-            if a not in ('y', 'yes', 't', 'true', 'on'):
-              print("skipping upload", file=sys.stderr)
-              branch.uploaded = False
-              branch.error = 'User aborted'
-              continue
+        # Report local changes that may have been forgotten
+        # Skip if uncommitted check is disabled or autoupload is enabled,
+        # (if they want to auto upload, let's not ask because it could be automated)
+        changes = None if (opt.dont_check_uncommit or answer) else branch.project.UncommitedFiles()
+        if changes:
+          sys.stdout.write('Uncommitted changes in ' + branch.project.name)
+          sys.stdout.write(' (did you forget to amend?):\n')
+          sys.stdout.write('\n'.join(changes) + '\n')
+          sys.stdout.write('Continue uploading? (y/N) ')
+          a = sys.stdin.readline().strip().lower()
+          if a not in ('y', 'yes', 't', 'true', 'on'):
+            print("skipping upload", file=sys.stderr)
+            branch.uploaded = False
+            branch.error = 'User aborted'
+            continue
 
         # Check if topic branches should be sent to the server during upload
         if opt.auto_topic is not True:
@@ -427,7 +448,12 @@ Gerrit Code Review:  http://code.google.com/p/gerrit/
     return merge_branch
 
   def Execute(self, opt, args):
-    project_list = self.GetProjects(args)
+    if opt.regex:
+      project_list = self.FindProjects(args)
+    elif opt.inverse_regex:
+      project_list = self.FindProjects(args, inverse=True)
+    else:
+      project_list = self.GetProjects(args, groups=opt.groups)
     pending = []
     reviewers = []
     cc = []
