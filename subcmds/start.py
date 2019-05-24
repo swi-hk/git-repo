@@ -39,6 +39,15 @@ revision specified in the manifest.
     p.add_option('--all',
                  dest='all', action='store_true',
                  help='begin branch in all projects')
+    p.add_option('-r', '--regex',
+                 dest='regex', action='store_true',
+                 help="Execute the command only on projects matching regex or wildcard expression")
+    p.add_option('-i', '--inverse-regex',
+                 dest='inverse_regex', action='store_true',
+                 help="Execute the command only on projects not matching regex or wildcard expression")
+    p.add_option('-g', '--groups',
+                 dest='groups',
+                 help="Execute the command only on projects matching the specified groups")
 
   def Execute(self, opt, args):
     if not args:
@@ -50,14 +59,25 @@ revision specified in the manifest.
       sys.exit(1)
 
     err = []
-    projects = []
-    if not opt.all:
-      projects = args[1:]
-      if len(projects) < 1:
-        projects = ['.',]  # start it in the local project by default
+    args = args[1:]
+    projects = None
+    if opt.regex:
+      all_projects = self.FindProjects(args)
+    elif opt.inverse_regex:
+      all_projects = self.FindProjects(args, inverse=True)
+    elif opt.groups:
+      all_projects = self.GetProjects(args, groups=opt.groups)
+    else:
+      projects = []
+      if not opt.all:
+        projects = args[1:]
+        if len(projects) < 1:
+          projects = ['.',]  # start it in the local project by default
 
-    all_projects = self.GetProjects(projects,
+      all_projects = self.GetProjects(projects,
                                     missing_ok=bool(self.gitc_manifest))
+    if not projects:
+      projects = [ p.name for p in all_projects ]
 
     # This must happen after we find all_projects, since GetProjects may need
     # the local directory, which will disappear once we save the GITC manifest.
