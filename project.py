@@ -1007,13 +1007,15 @@ class Project(object):
 
     return 'DIRTY'
 
-  def PrintWorkTreeDiff(self, absolute_paths=False):
+  def PrintWorkTreeDiff(self, absolute_paths=False, git_args=""):
     """Prints the status of the repository to stdout.
     """
     out = DiffColoring(self.config)
     cmd = ['diff']
     if out.is_on:
       cmd.append('--color')
+    if git_args:
+      cmd.append(git_args)
     cmd.append(HEAD)
     if absolute_paths:
       cmd.append('--src-prefix=a/%s/' % self.relpath)
