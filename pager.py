@@ -68,7 +68,7 @@ def _SelectPager(globalConfig):
   except KeyError:
     pass
 
-  return 'less'
+  return 'less -R -F -K'
 
 def _BecomePager(pager):
   # Delaying execution of the pager until we have output
