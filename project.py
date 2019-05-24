@@ -2501,8 +2501,8 @@ class Project(object):
         cmd = ['read-tree', '--reset', '-u']
         cmd.append('-v')
         cmd.append(HEAD)
-        if GitCommand(self, cmd).Wait() != 0:
-          raise GitError("cannot initialize work tree")
+        if GitCommand(self, cmd).Wait() != 0 and not self.name.startswith(('external/caf/kernel/', 'external/caf/platform/external/')):
+          raise GitError("cannot initialize work tree %s at %s" % (self.name, self.relpath))
 
         self._CopyAndLinkFiles()
     except Exception:
