@@ -6,8 +6,10 @@ import os
 REPO_URL = os.environ.get('REPO_URL', None)
 if not REPO_URL:
   # REPO_URL = 'https://gerrit.googlesource.com/git-repo'
-  REPO_URL = 'https://github.com/esrlabs/git-repo'
-REPO_REV = 'stable'
+  # REPO_URL = 'https://github.com/esrlabs/git-repo'
+#REPO_REV = 'stable'
+  REPO_URL = 'https://github.com/swi-hk/git-repo'
+REPO_REV = 'sierra'
 
 # Copyright (C) 2008 Google Inc.
 #
@@ -117,6 +119,38 @@ i3RIBfNgsHpCow9/2JG/c38HK9oMRDES3Rjvg8zxnNJGUDOr1AyW2JpTQtYDWAoc
 UYOxmBnVcAjZq8uA0+88cjuCwlh1cnVik75uGOFvffBEDa3C1uflhDwW9nngSi4O
 tKO/KcU9db+FQKCvKRYwbKWhNgtukdMDh0BZGIsdLNRUsdLEOA==
 =o/U8
+-----END PGP PUBLIC KEY BLOCK-----
+
+     Paul Chan <pca@sierrawireless.com>
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1
+
+mQENBFzniBIBCADxDQ7anR0JBS6OyYJ+6+MMNjq0A4aBHRbI/tqTubffQp3rcos5
+8xcfGs5iKTb8iNYFjA2g8c9SpJqJ4exyYRdEuXuDtfry1RyBXstvlgwsF63FcjXb
+Gu/OjKx/G73EAnCSBiwHjM4TjaNGCA2pcipGEDtTrplO6NomWoXAP+LzenpreY9o
+6UWYk01yXk79UqXqIuQyvZdkItrTwXvSV+HGWYKPHWizs+U038zBBYfqqRjpzTAs
+CI3pocYwNQGp5bYGW0JLxrp/X2T/mYv7TLfTe/7F7OjNvms8MmKZHhvHLLO598sU
+8nsOopLRxzmUgvuA+m+YRdzOAIz7Ou36gLnVABEBAAG0IlBhdWwgQ2hhbiA8cGNh
+QHNpZXJyYXdpcmVsZXNzLmNvbT6JATgEEwECACIFAlzniBICGwMGCwkIBwMCBhUI
+AgkKCwQWAgMBAh4BAheAAAoJEG7yjsJmeQeZPSsH/jO0fR+A/OadJfBGXdeCo8NQ
+SjADgV6E0wCrzj9Wlz0uV+bqfCRRYQ0X1kPWIHX/xtKNN4eBNyK/7XtEG2HWOM5r
+WgYZPazkC2zZIVj9CYMWOd8GrbBkjUk/OoBubfNIGWJ1huOaFmrEloj6ASE4C60x
+gSD6deqfwhigoxCzENgyC2xkyPcwcpfA9F0pUNLG4Xr42EVHUiF4beJ4ALFRgjuN
+UXYYgT2yJiOD0bXG3CFdL4bmBb5zrBiKmUP5opKdQAguS7m0xb2INyIJSqc9HHCk
+gsB9HfgW7OaaTLEgnikJ/4yIL4GN3Fl831dQDAZZsnQhN0NzVPHk0rGp7LgATre5
+AQ0EXOeIEgEIAM065SL9x3E6T53+9EpiOwZu63V34UwmCy3oTWv1Yd0oWc1eW2bR
+HnH3fslg8im8TMSc1lbf6HaKt3OeilRFLOOA8u56987wBYRe2QXJv5ZUaWXyOwrC
+0PuNzl1xLWVMUbGlyrXPIouRw4/xUT6d5VfstLUvFKYZXI6qRreQIymyzi0rCAWc
+NVo6KBLpUcHyRTkZePweQc5YlwdDz+7Jqrihoyhhxd8IjUARFbFGVFq/UiTPYQyj
+zK8o6/b9UFwy60FSYTUgpTlUwppkhfsn0fYlQ6+0fP7KMj0b9O2IsX1HbPj17P5M
+UyPMt4SwKfWIonQBygI/D5QuoFb2dSoRWX8AEQEAAYkBHwQYAQIACQUCXOeIEgIb
+DAAKCRBu8o7CZnkHmXLwCADY55aqd/2Qf+AEPRWXCtMvGugXjxtiR8BlOte8e7g8
+uHWKtIzE6rUVJRlIOS5c21AZD7qL0dzZk0A/OlfLnYQ+/ayMcHOTY0gTXFLVo4GF
+7L69CPw3N7UBRFCVzS/QNida+duK6apXe1F7LEDwk8l27B44kbK3FPCCQDJWagOj
+9V/otz2VZF65fapO6c5t598yI3uZcH1X3ooqYbsAkTc/+iV+yQxzTm2ctu0KFsLS
+uf0WAgLZ7N5+iFMIRWKqek6Lbvc61xauHxyrkBe8w88auBYblrcbmvAaF50K3AyC
+gg1u4/N4vrbJMP0448u+rF0RGixTa/tQQJfNqjJcLHpP
+=9F7Q
 -----END PGP PUBLIC KEY BLOCK-----
 """
 
